@@ -28,16 +28,6 @@ Una agenda financiera nativa premium para iOS diseñada con la estética de **Li
 
 ---
 
-## 🔒 Modelo de Seguridad y Secretos
-
-Este repositorio sigue altos estándares de seguridad para evitar la filtración accidental de claves de producción:
-
-1.  **Cero Hardcoding:** No hay claves de Supabase ni URLs expuestas en el código fuente principal.
-2.  **Ignorado por Git:** Las claves sensibles se almacenan de forma local en `Core/Networking/Secrets.swift`, el cual está configurado explícitamente en el `.gitignore`.
-3.  **Configuración Guiada:** Se provee una plantilla `Secrets.swift.example` y un script de inicialización automática `setup.sh` para facilitar la configuración inicial de nuevos desarrolladores.
-
----
-
 ## 🚀 Guía de Instalación y Configuración
 
 Sigue estos pasos para poner en marcha el proyecto localmente:
