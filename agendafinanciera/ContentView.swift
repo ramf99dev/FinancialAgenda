@@ -1,24 +1,28 @@
-//
-//  ContentView.swift
-//  agendafinanciera
-//
-//  Created by Randy Molina on 20/5/26.
-//
+// Vista de enrutamiento principal (Root)
+// Decide si mostrar la pantalla de autenticacion o la aplicacion principal
+// basandose en el estado de la sesion del usuario.
 
 import SwiftUI
 
+/// Controlador de vista principal que maneja el flujo de autenticacion vs app principal
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
+    @EnvironmentObject var authService: AuthService
 
-#Preview {
-    ContentView()
+    var body: some View {
+        Group {
+            if authService.session != nil {
+                AppMainContainerView()
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            } else {
+                LoginView()
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.4), value: authService.session != nil)
+        .onAppear {
+            Task {
+                await authService.checkSession()
+            }
+        }
+    }
 }
