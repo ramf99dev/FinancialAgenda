@@ -23,29 +23,21 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4F0F8DA42FBDE7C9009524F3 /* agendafinanciera */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = agendafinanciera;
 			sourceTree = "<group>";
 		};
 		4F0F8DB52FBDFF9C009524F3 /* Core */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Core;
 			sourceTree = "<group>";
 		};
 		4F0F8DE32FBE00AC009524F3 /* Modules */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Modules;
 			sourceTree = "<group>";
 		};
 		4F0F8E182FBE01C5009524F3 /* Resources */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Resources;
 			sourceTree = "<group>";
 		};

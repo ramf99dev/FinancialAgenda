@@ -1,0 +1,54 @@
+# ==========================================
+# Gitignore profesional para iOS (Swift/Xcode)
+# ==========================================
+
+# --- Seguridad y Claves de Configuración (CRÍTICO) ---
+# Archivo de secretos locales que contiene URLs y keys reales
+Core/Networking/Secrets.swift
+
+# --- Xcode ---
+# Carpetas de datos de usuario de Xcode
+.xcodeproj/*
+!.xcodeproj/project.pbxproj
+!.xcodeproj/xcshareddata/
+.xcodeproj/project.xcworkspace/*
+!.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+!.xcodeproj/project.xcworkspace/xcshareddata/
+.xcodeproj/xcuserdata/
+*.xcuserdatad
+*.xcuserdata
+*.xcuserstate
+
+# --- Sistema de compilación y artefactos ---
+build/
+DerivedData/
+.build/
+Products/
+Intermediates.noindex/
+Index.noindex/
+
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon\r
+._*
+.Spotlight-V100
+.Trashes
+*.swift-view
+
+# --- Swift Package Manager ---
+# El archivo Package.resolved sí se sube para fijar las versiones exactas en aplicaciones
+.swiftpm/xcode/control_shared_data/
+.swiftpm/xcode/package.xcworkspace/
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+.swiftpm/xcode/package.xcworkspace/xcshareddata/
+.swiftpm/configuration/
+
+# --- Carthage (si se llega a usar en el futuro) ---
+Carthage/Build/
+
+# --- CocoaPods (si se llega a usar en el futuro) ---
+Pods/
+*.xcworkspace
+!agendafinanciera.xcodeproj/project.xcworkspace
