@@ -109,10 +109,7 @@ struct RegisterView: View {
                         // Boton de Registro
                         Button {
                             Task {
-                                let success = await viewModel.register()
-                                if success {
-                                    dismiss()
-                                }
+                                _ = await viewModel.register()
                             }
                         } label: {
                             HStack {
@@ -176,6 +173,13 @@ struct RegisterView: View {
             Button("Entendido", role: .cancel) {}
         } message: {
             Text(viewModel.errorMessage ?? "No se pudo registrar la cuenta.")
+        }
+        .alert("Registro Exitoso", isPresented: $viewModel.showSuccessAlert) {
+            Button("Entendido") {
+                dismiss()
+            }
+        } message: {
+            Text(viewModel.successMessage ?? "Cuenta registrada exitosamente. Por favor confirme el correo con el link enviado.")
         }
     }
 }

@@ -88,6 +88,15 @@ public final class TransactionViewModel: ObservableObject {
         accountService.accounts
     }
 
+    /// Obtiene la moneda de la cuenta actualmente seleccionada ("VES" o "USD")
+    public var selectedAccountCurrency: String {
+        guard let accountId = selectedAccountId,
+              let account = accountService.accounts.first(where: { $0.id == accountId }) else {
+            return "USD"
+        }
+        return account.currency
+    }
+
     // MARK: - Teclado Numerico
 
     /// Procesa una tecla del teclado numerico personalizado

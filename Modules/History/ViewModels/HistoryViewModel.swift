@@ -14,6 +14,26 @@ public final class HistoryViewModel: ObservableObject {
     @Published public var txService = TransactionService.shared
     @Published public var accountService = AccountService.shared
 
+    private var cancellables = Set<AnyCancellable>()
+
+    public init() {
+        // Propagar actualizaciones de TransactionService para redibujar la vista
+        TransactionService.shared.$transactions
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        // Propagar actualizaciones de AccountService
+        AccountService.shared.$accounts
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+    }
+
     // MARK: - Estado de Filtros
 
     /// Patron de texto para busqueda por nota o negocio

@@ -39,6 +39,8 @@ struct TransactionRowView: View {
             Text(transaction.formattedAmount)
                 .font(.system(size: 15, weight: .bold, design: .rounded))
                 .foregroundStyle(transaction.type == .income ? Color.appleGreen : Color.appleRed)
+                .lineLimit(1)
+                .layoutPriority(1)
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)

@@ -13,7 +13,7 @@ struct ForgotPasswordView: View {
                 VStack(spacing: 24) {
                     // Mensaje Informativo
                     VStack(spacing: 12) {
-                        Image(systemName: "lock.envelope.fill")
+                        Image(systemName: "lock.shield.fill")
                             .font(.system(size: 56))
                             .foregroundStyle(Color.appleBlue)
                             .padding(.top, 24)

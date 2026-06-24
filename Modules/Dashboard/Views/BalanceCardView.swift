@@ -4,6 +4,7 @@ import SwiftUI
 struct BalanceCardView: View {
     let cardName: String
     let balance: Double
+    let currencyCode: String
     let iconName: String
     let iconColor: Color
     
@@ -39,17 +40,18 @@ struct BalanceCardView: View {
     }
     
     private var formattedAmount: String {   
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        return formatter.string(from: NSNumber(value: balance)) ?? "$\(balance)"
+        if currencyCode == "VES" {
+            return CurrencyFormatter.formatVES(balance)
+        } else {
+            return CurrencyFormatter.format(balance, currencyCode: currencyCode)
+        }
     }
 }
 
 #Preview {
     HStack {
-        BalanceCardView(cardName: "Cuenta Corriente", balance: 8300.0, iconName: "building.columns.fill", iconColor: Color.appleBlue)
-        BalanceCardView(cardName: "Ahorros", balance: 3150.50, iconName: "leaf.fill", iconColor: Color.appleGreen)
+        BalanceCardView(cardName: "Cuenta Corriente", balance: 8300.0, currencyCode: "VES", iconName: "building.columns.fill", iconColor: Color.appleBlue)
+        BalanceCardView(cardName: "Ahorros", balance: 3150.50, currencyCode: "USD", iconName: "leaf.fill", iconColor: Color.appleGreen)
     }
     .padding()
     .background(Color.appleBackground)

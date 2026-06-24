@@ -142,7 +142,7 @@ struct ExchangeCalculatorView: View {
                         .foregroundStyle(Color.appleSecondary)
                 }
 
-                Text("Bs. \(String(format: "%.2f", value))")
+                Text(CurrencyFormatter.formatVES(value))
                     .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.applePrimary)
             }
@@ -223,7 +223,7 @@ struct ExchangeCalculatorView: View {
         VStack(spacing: 16) {
             // Indicador principal de brecha
             VStack(spacing: 8) {
-                Text("\(String(format: "%.1f", gapPercentage))%")
+                Text("\(CurrencyFormatter.formatDecimal(gapPercentage, minimumFractionDigits: 1, maximumFractionDigits: 1))%")
                     .font(.system(size: 42, weight: .bold, design: .rounded))
                     .foregroundStyle(gapInfo.color)
 
@@ -310,7 +310,7 @@ struct ExchangeCalculatorView: View {
                 Text("Compra")
                     .font(.system(size: 8, weight: .bold))
                     .foregroundStyle(Color.appleSecondary)
-                Text(String(format: "%.2f", buy))
+                Text(CurrencyFormatter.formatDecimal(buy))
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.appleGreen)
             }
@@ -320,7 +320,7 @@ struct ExchangeCalculatorView: View {
                 Text("Venta")
                     .font(.system(size: 8, weight: .bold))
                     .foregroundStyle(Color.appleSecondary)
-                Text(String(format: "%.2f", sell))
+                Text(CurrencyFormatter.formatDecimal(sell))
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundStyle(Color.appleRed)
             }
@@ -334,18 +334,24 @@ struct ExchangeCalculatorView: View {
 
     private func triggerCalculation() {
         if activeField == .usd || activeField == nil {
-            guard let val = Double(usdAmountString.replacingOccurrences(of: ",", with: ".")) else {
+            let cleanUsd = usdAmountString
+                .replacingOccurrences(of: ".", with: "")
+                .replacingOccurrences(of: ",", with: ".")
+            guard let val = Double(cleanUsd) else {
                 vesAmountString = ""
                 return
             }
-            vesAmountString = String(format: "%.2f", val * activeRate)
+            vesAmountString = CurrencyFormatter.formatDecimal(val * activeRate)
         } else if activeField == .ves {
-            guard let val = Double(vesAmountString.replacingOccurrences(of: ",", with: ".")),
+            let cleanVes = vesAmountString
+                .replacingOccurrences(of: ".", with: "")
+                .replacingOccurrences(of: ",", with: ".")
+            guard let val = Double(cleanVes),
                   activeRate > 0 else {
                 usdAmountString = ""
                 return
             }
-            usdAmountString = String(format: "%.2f", val / activeRate)
+            usdAmountString = CurrencyFormatter.formatDecimal(val / activeRate)
         }
     }
 }

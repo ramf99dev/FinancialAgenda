@@ -37,13 +37,15 @@ public final class AuthViewModel: ObservableObject {
     public func validateLoginForm() -> Bool {
         var isValid = true
         
-        if email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedEmail.isEmpty {
             emailValidationError = "El correo electrónico es obligatorio"
             isValid = false
-        } else if !isValidEmail(email) {
+        } else if !isValidEmail(trimmedEmail) {
             emailValidationError = "Formato de correo electrónico inválido"
             isValid = false
         } else {
+            self.email = trimmedEmail
             emailValidationError = nil
         }
         
@@ -67,21 +69,23 @@ public final class AuthViewModel: ObservableObject {
             fullNameValidationError = nil
         }
         
-        if email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedEmail.isEmpty {
             emailValidationError = "El correo electrónico es obligatorio"
             isValid = false
-        } else if !isValidEmail(email) {
+        } else if !isValidEmail(trimmedEmail) {
             emailValidationError = "Formato de correo electrónico inválido"
             isValid = false
         } else {
+            self.email = trimmedEmail
             emailValidationError = nil
         }
         
         if password.isEmpty {
             passwordValidationError = "La contraseña es obligatoria"
             isValid = false
-        } else if password.count < 6 {
-            passwordValidationError = "La contraseña debe tener al menos 6 caracteres"
+        } else if password.count < 8 {
+            passwordValidationError = "La contraseña debe tener al menos 8 caracteres"
             isValid = false
         } else {
             passwordValidationError = nil
@@ -144,6 +148,8 @@ public final class AuthViewModel: ObservableObject {
         do {
             try await authService.signUp(email: email, password: password, fullName: fullName)
             isLoading = false
+            successMessage = "Cuenta registrada exitosamente. Por favor confirme el correo con el link enviado."
+            showSuccessAlert = true
             return true
         } catch {
             isLoading = false
@@ -182,20 +188,26 @@ public final class AuthViewModel: ObservableObject {
     }
     
     private func mapAuthError(_ error: Error) -> String {
-        let localizedDescription = error.localizedDescription
+        let errorString = error.localizedDescription.lowercased()
         
-        if localizedDescription.contains("Invalid login credentials") || localizedDescription.contains("invalid_credentials") {
-            return "Correo o contraseña incorrectos."
-        } else if localizedDescription.contains("Email not confirmed") || localizedDescription.contains("email_not_confirmed") {
-            return "Por favor, confirma tu correo electrónico antes de iniciar sesión."
-        } else if localizedDescription.contains("User already registered") || localizedDescription.contains("user_already_exists") {
-            return "Ya existe un usuario registrado con este correo electrónico."
-        } else if localizedDescription.contains("signup_disabled") {
-            return "El registro de cuentas está deshabilitado temporalmente."
-        } else if localizedDescription.contains("Email address is invalid") {
+        if errorString.contains("invalid login credentials") || errorString.contains("invalid_credentials") {
+            return "El correo electrónico o la contraseña son incorrectos."
+        } else if errorString.contains("email not confirmed") || errorString.contains("email_not_confirmed") {
+            return "Debes confirmar tu correo electrónico. Por favor, revisa tu bandeja de entrada."
+        } else if errorString.contains("already registered") || errorString.contains("user_already_exists") || errorString.contains("already exists") {
+            return "Este correo electrónico ya está registrado. Intenta iniciar sesión."
+        } else if errorString.contains("signup_disabled") || errorString.contains("signup is disabled") {
+            return "El registro está deshabilitado temporalmente."
+        } else if errorString.contains("invalid email") || errorString.contains("email address is invalid") {
             return "El formato del correo electrónico no es válido."
+        } else if errorString.contains("password should be") || errorString.contains("weak_password") || errorString.contains("password is too short") || errorString.contains("at least 8 characters") {
+            return "La contraseña es muy débil. Debe tener al menos 8 caracteres."
+        } else if errorString.contains("rate limit") || errorString.contains("too many requests") {
+            return "Has realizado demasiados intentos. Por favor, inténtalo más tarde."
+        } else if errorString.contains("network") || errorString.contains("connection") {
+            return "Error de conexión. Verifica tu conexión a internet e inténtalo de nuevo."
         }
         
-        return localizedDescription
+        return error.localizedDescription
     }
 }

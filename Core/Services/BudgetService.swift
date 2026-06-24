@@ -109,4 +109,9 @@ public final class BudgetService: ObservableObject {
     public func totalBudget() -> Double {
         budgets.reduce(0) { $0 + $1.amount }
     }
+
+    /// Limpia los datos locales del presupuesto al cerrar sesión
+    public func clearData() {
+        self.budgets = []
+    }
 }

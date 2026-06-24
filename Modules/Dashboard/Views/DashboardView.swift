@@ -10,35 +10,41 @@ struct DashboardView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 20) {
-
-                    // -- Tarjeta de Balance Total Consolidado --
-                    balanceCard
-
-                    // -- Widget de Presupuesto Mensual --
-                    BudgetWidgetView(
-                        totalBudget: viewModel.budgetService.totalBudget(),
-                        totalSpent: viewModel.totalExpenses
-                    )
-                    .padding(.horizontal, 20)
-
-                    // -- Fila de Widgets: Calculadora + Salud Financiera --
-                    widgetRow
-
-                    // -- Flujo de Caja Real --
-                    cashFlowCard
-
-                    // -- Seccion: Mis Cuentas --
-                    accountsSection
-
-                    // -- Entradas Rapidas --
-                    quickActionsSection
-
-                    // -- Historial de Movimientos Recientes --
-                    recentTransactionsSection
+            Group {
+                if viewModel.isLoading {
+                    DashboardSkeletonView()
+                } else {
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 20) {
+                            
+                            // -- Tarjeta de Balance Total Consolidado --
+                            balanceCard
+                            
+                            // -- Widget de Presupuesto Mensual --
+                            BudgetWidgetView(
+                                totalBudget: viewModel.budgetService.totalBudget(),
+                                totalSpent: viewModel.totalExpenses
+                            )
+                            .padding(.horizontal, 20)
+                            
+                            // -- Fila de Widgets: Calculadora + Salud Financiera --
+                            widgetRow
+                            
+                            // -- Flujo de Caja Real --
+                            cashFlowCard
+                            
+                            // -- Seccion: Mis Cuentas --
+                            accountsSection
+                            
+                            // -- Entradas Rapidas --
+                            quickActionsSection
+                            
+                            // -- Historial de Movimientos Recientes --
+                            recentTransactionsSection
+                        }
+                        .padding(.bottom, 32)
+                    }
                 }
-                .padding(.bottom, 32)
             }
             .background(Color.appleBackground)
             .navigationTitle("Resumen")
@@ -144,13 +150,37 @@ struct DashboardView: View {
             } label: {
                 VStack(spacing: 10) {
                     ZStack {
-                        Circle()
-                            .fill(Color.appleBlue.opacity(0.1))
-                            .frame(width: 40, height: 40)
-
-                        Image(systemName: "plus.forwardslash.minus")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(Color.appleBlue)
+                        // Cuerpo de la calculadora (vertical gris claro estilo macOS/iOS clásico)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color(red: 215/255, green: 215/255, blue: 217/255))
+                            .frame(width: 38, height: 52)
+                            .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 1.5)
+                        
+                        VStack(spacing: 4) {
+                            // Pantalla (gris oscuro)
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color(red: 60/255, green: 60/255, blue: 60/255))
+                                .frame(width: 30, height: 13)
+                            
+                            // Botones grid 3x3 (6 gris oscuro, 3 naranja)
+                            VStack(spacing: 3) {
+                                HStack(spacing: 3) {
+                                    Circle().fill(Color(red: 65/255, green: 65/255, blue: 65/255)).frame(width: 7, height: 7)
+                                    Circle().fill(Color(red: 65/255, green: 65/255, blue: 65/255)).frame(width: 7, height: 7)
+                                    Circle().fill(Color.orange).frame(width: 7, height: 7)
+                                }
+                                HStack(spacing: 3) {
+                                    Circle().fill(Color(red: 65/255, green: 65/255, blue: 65/255)).frame(width: 7, height: 7)
+                                    Circle().fill(Color(red: 65/255, green: 65/255, blue: 65/255)).frame(width: 7, height: 7)
+                                    Circle().fill(Color.orange).frame(width: 7, height: 7)
+                                }
+                                HStack(spacing: 3) {
+                                    Circle().fill(Color(red: 65/255, green: 65/255, blue: 65/255)).frame(width: 7, height: 7)
+                                    Circle().fill(Color(red: 65/255, green: 65/255, blue: 65/255)).frame(width: 7, height: 7)
+                                    Circle().fill(Color.orange).frame(width: 7, height: 7)
+                                }
+                            }
+                        }
                     }
 
                     VStack(spacing: 2) {
@@ -323,6 +353,7 @@ struct DashboardView: View {
                             BalanceCardView(
                                 cardName: account.name,
                                 balance: account.balance,
+                                currencyCode: account.currency,
                                 iconName: AccountTypeMapper.icon(for: account.type),
                                 iconColor: AccountTypeMapper.color(for: account.type)
                             )

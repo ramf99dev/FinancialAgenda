@@ -42,6 +42,13 @@ public final class AuthService: ObservableObject {
     public func signOut() async throws {
         try await client.auth.signOut()
         self.session = nil
+        self.currentUser = nil
+        
+        // Limpiar datos locales y cancelar suscripciones en tiempo real
+        await AccountService.shared.unsubscribe()
+        await TransactionService.shared.unsubscribe()
+        await CategoryService.shared.unsubscribe()
+        BudgetService.shared.clearData()
     }
     
     /// Obtiene y decodifica el perfil del usuario actual desde Supabase

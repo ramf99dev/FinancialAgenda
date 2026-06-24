@@ -17,12 +17,27 @@ public final class ExchangeRateService: ObservableObject {
     @Published public var errorMessage: String? = nil
     
     private init() {
-        self.bcvRate = 36.50
-        self.binanceRate = 36.50 * 1.052
-        self.binanceBuyRate = 36.50 * 1.052
-        self.binanceSellRate = 36.50 * 1.055
-        self.bybitBuyRate = 36.50 * 1.050
-        self.bybitSellRate = 36.50 * 1.053
+        let defaults = UserDefaults.standard
+        let cachedBcv = defaults.double(forKey: "cached_bcvRate")
+        
+        if cachedBcv > 0 {
+            self.bcvRate = cachedBcv
+            self.binanceBuyRate = defaults.double(forKey: "cached_binanceBuyRate")
+            self.binanceSellRate = defaults.double(forKey: "cached_binanceSellRate")
+            self.binanceRate = self.binanceBuyRate
+            self.bybitBuyRate = defaults.double(forKey: "cached_bybitBuyRate")
+            self.bybitSellRate = defaults.double(forKey: "cached_bybitSellRate")
+            if let time = defaults.object(forKey: "cached_lastUpdated") as? Date {
+                self.lastUpdated = time
+            }
+        } else {
+            self.bcvRate = 36.50
+            self.binanceRate = 36.50 * 1.052
+            self.binanceBuyRate = 36.50 * 1.052
+            self.binanceSellRate = 36.50 * 1.055
+            self.bybitBuyRate = 36.50 * 1.050
+            self.bybitSellRate = 36.50 * 1.053
+        }
     }
     
     /// Descarga las tasas reales consolidadas desde el nuevo Cloudflare Worker
@@ -73,12 +88,23 @@ public final class ExchangeRateService: ObservableObject {
                     self.bybitSellRate = result.bybit.sell
                     self.lastUpdated = Date()
                     self.isFetching = false
+                    
+                    // Persistir en UserDefaults para el próximo arranque
+                    let defaults = UserDefaults.standard
+                    defaults.set(result.bcv, forKey: "cached_bcvRate")
+                    defaults.set(result.binance.buy, forKey: "cached_binanceBuyRate")
+                    defaults.set(result.binance.sell, forKey: "cached_binanceSellRate")
+                    defaults.set(result.bybit.buy, forKey: "cached_bybitBuyRate")
+                    defaults.set(result.bybit.sell, forKey: "cached_bybitSellRate")
+                    defaults.set(self.lastUpdated, forKey: "cached_lastUpdated")
                 }
             } else {
                 throw NSError(domain: "USDTWorker", code: 1, userInfo: [NSLocalizedDescriptionKey: "Error en el Worker"])
             }
             
         } catch {
+            print("❌ Error al descargar tasas de cambio: \(error.localizedDescription)")
+            print("Detalles del error: \(error)")
             await MainActor.run {
                 self.isFetching = false
                 self.errorMessage = error.localizedDescription

@@ -35,8 +35,10 @@ public final class AccountService: ObservableObject {
             self.accounts = response
             self.isLoading = false
             
-            // Suscribirse al canal en tiempo real
-            await subscribeToRealtimeAccounts()
+            // Suscribirse al canal en tiempo real en segundo plano sin bloquear el hilo principal
+            Task {
+                await subscribeToRealtimeAccounts()
+            }
         } catch {
             self.isLoading = false
             print("Error al descargar cuentas de Supabase: \(error.localizedDescription)")
@@ -44,21 +46,41 @@ public final class AccountService: ObservableObject {
     }
     
     /// Inserta una nueva cuenta en la base de datos Supabase
-    public func createAccount(name: String, type: String, initialBalance: Double) async -> Bool {
+    public func createAccount(name: String, type: String, initialBalance: Double, currency: String = "USD", customAccountNumber: String? = nil) async -> Bool {
         guard let session = try? await client.auth.session else { return false }
         let userId = session.user.id
         
-        let actNumber: String
-        switch type {
-        case "cash":
-            actNumber = "Efectivo Físico"
-        case "crypto":
-            actNumber = "Billetera Binance"
-        case "wallet":
-            actNumber = "Billetera Digital"
-        default:
-            actNumber = "**** \(Int.random(in: 1000...9999))"
+        let rawActNumber: String
+        if let custom = customAccountNumber {
+            let trimmed = custom.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                rawActNumber = trimmed
+            } else {
+                switch type {
+                case "cash":
+                    rawActNumber = "Efectivo Físico"
+                case "crypto":
+                    rawActNumber = "Billetera Binance"
+                case "wallet":
+                    rawActNumber = "Billetera Digital"
+                default:
+                    rawActNumber = ""
+                }
+            }
+        } else {
+            switch type {
+            case "cash":
+                rawActNumber = "Efectivo Físico"
+            case "crypto":
+                rawActNumber = "Billetera Binance"
+            case "wallet":
+                rawActNumber = "Billetera Digital"
+            default:
+                rawActNumber = "**** \(Int.random(in: 1000...9999))"
+            }
         }
+        
+        let actNumber = "\(currency)|\(rawActNumber)"
         
         let newAccount = Account(
             id: UUID(),

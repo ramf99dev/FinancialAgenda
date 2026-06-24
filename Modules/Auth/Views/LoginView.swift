@@ -6,24 +6,21 @@ struct LoginView: View {
     @State private var showForgotPassword = false
     
     var body: some View {
-        ZStack {
-            Color.appleBackground.ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                Color.appleBackground.ignoresSafeArea()
             
             VStack(spacing: 24) {
                 Spacer()
                 
                 // Logotipo de la App
                 VStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 80, height: 80)
-                            .appleShadow()
-                        
-                        Image(systemName: "chart.pie.fill")
-                            .font(.system(size: 36))
-                            .foregroundStyle(Color.appleBlue)
-                    }
+                    Image("logoapp")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 80, height: 80)
+                        .clipShape(Circle())
+                        .appleShadow()
                     
                     Text("Agenda Financiera")
                         .font(.system(size: 26, weight: .bold, design: .rounded))
@@ -174,9 +171,10 @@ struct LoginView: View {
             }
         }
         .navigationBarHidden(true)
-        .sheet(isPresented: $showForgotPassword) {
-            ForgotPasswordView()
-        }
+    }
+    .sheet(isPresented: $showForgotPassword) {
+        ForgotPasswordView()
+    }
         .alert("Error de ingreso", isPresented: $viewModel.showErrorAlert) {
             Button("Entendido", role: .cancel) {}
         } message: {

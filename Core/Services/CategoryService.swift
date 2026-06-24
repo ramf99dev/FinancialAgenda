@@ -41,8 +41,10 @@ public final class CategoryService: ObservableObject {
             }
             self.isLoading = false
             
-            // Suscribirse al canal en tiempo real
-            await subscribeToRealtimeCategories()
+            // Suscribirse al canal en tiempo real en segundo plano sin bloquear
+            Task {
+                await subscribeToRealtimeCategories()
+            }
         } catch {
             self.isLoading = false
             print("Error al descargar categorias de Supabase: \(error.localizedDescription)")

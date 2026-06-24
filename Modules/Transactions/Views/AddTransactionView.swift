@@ -62,7 +62,8 @@ struct AddTransactionView: View {
                                 .font(.system(size: 11))
                                 .foregroundStyle(Color.appleSecondary)
                             Spacer()
-                            Text(CurrencyFormatter.format(projected))
+                            let formattedProjected = viewModel.selectedAccountCurrency == "VES" ? CurrencyFormatter.formatVES(projected) : CurrencyFormatter.format(projected)
+                            Text(formattedProjected)
                                 .font(.system(size: 13, weight: .bold, design: .rounded))
                                 .foregroundStyle(projected >= 0 ? Color.appleGreen : Color.appleRed)
                         }
@@ -166,7 +167,9 @@ struct AddTransactionView: View {
                 .foregroundStyle(Color.appleSecondary)
                 .tracking(1.0)
 
-            Text("$\(viewModel.amountString)")
+            let displayAmount = viewModel.amountString.replacingOccurrences(of: ".", with: ",")
+            let currencySymbol = viewModel.selectedAccountCurrency == "VES" ? "Bs. " : "$"
+            Text("\(currencySymbol)\(displayAmount)")
                 .font(.system(size: 44, weight: .bold, design: .rounded))
                 .foregroundStyle(viewModel.selectedType == .income ? Color.appleGreen : Color.appleRed)
                 .contentTransition(.numericText())

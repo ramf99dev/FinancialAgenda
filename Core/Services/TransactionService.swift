@@ -35,8 +35,10 @@ public final class TransactionService: ObservableObject {
             self.transactions = response
             self.isLoading = false
             
-            // Habilitar escucha en tiempo real
-            await subscribeToRealtimeTransactions()
+            // Habilitar escucha en tiempo real en segundo plano sin bloquear
+            Task {
+                await subscribeToRealtimeTransactions()
+            }
         } catch {
             self.isLoading = false
             print("Error al descargar transacciones de Supabase: \(error.localizedDescription)")

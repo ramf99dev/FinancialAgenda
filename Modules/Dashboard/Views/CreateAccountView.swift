@@ -8,12 +8,25 @@ struct CreateAccountView: View {
     @State private var accountName = ""
     @State private var accountType = "checking"
     @State private var initialBalanceString = "0.00"
+    @State private var accountCurrency = "USD"
+    @State private var customAccountNumber = ""
     @State private var isLoading = false
+    @FocusState private var focusedField: Field?
+    
+    enum Field {
+        case name
+        case balance
+        case accountNumber
+    }
     
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.appleBackground.ignoresSafeArea()
+                Color.appleBackground
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        focusedField = nil
+                    }
                 
                 VStack(spacing: 24) {
                     // Mensaje Informativo
@@ -45,6 +58,7 @@ struct CreateAccountView: View {
                                 .padding(.leading, 4)
                             
                             TextField("Ej: Cuenta Corriente, Tarjeta Nómina", text: $accountName)
+                                .focused($focusedField, equals: .name)
                                 .foregroundStyle(Color.applePrimary)
                                 .appleTextFieldStyle()
                         }
@@ -125,24 +139,54 @@ struct CreateAccountView: View {
                             }
                         }
                         
+                        // Moneda de la Cuenta
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("MONEDA DE LA CUENTA")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(Color.appleSecondary)
+                                .tracking(0.5)
+                                .padding(.leading, 4)
+                            
+                            Picker("Moneda", selection: $accountCurrency) {
+                                Text("Bolívares (VES)").tag("VES")
+                                Text("Dólares (USD)").tag("USD")
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                        }
+                        
                         // Saldo Inicial
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("SALDO INICIAL (USD)")
+                            Text(accountCurrency == "VES" ? "SALDO INICIAL (VES)" : "SALDO INICIAL (USD)")
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundStyle(Color.appleSecondary)
                                 .tracking(0.5)
                                 .padding(.leading, 4)
                             
                             HStack {
-                                Text("$")
+                                Text(accountCurrency == "VES" ? "Bs." : "$")
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundStyle(Color.appleSecondary)
                                 
                                 TextField("0.00", text: $initialBalanceString)
                                     .keyboardType(.decimalPad)
+                                    .focused($focusedField, equals: .balance)
                                     .foregroundStyle(Color.applePrimary)
                             }
                             .appleTextFieldStyle()
+                        }
+                        
+                        // Número de Cuenta / Tarjeta Opcional
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(accountNumberLabel)
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(Color.appleSecondary)
+                                .tracking(0.5)
+                                .padding(.leading, 4)
+                            
+                            TextField(accountNumberPlaceholder, text: $customAccountNumber)
+                                .focused($focusedField, equals: .accountNumber)
+                                .foregroundStyle(Color.applePrimary)
+                                .appleTextFieldStyle()
                         }
                     }
                     .padding(20)
@@ -157,7 +201,9 @@ struct CreateAccountView: View {
                             let success = await accountService.createAccount(
                                 name: accountName.isEmpty ? "Cuenta Nueva" : accountName,
                                 type: accountType,
-                                initialBalance: balance
+                                initialBalance: balance,
+                                currency: accountCurrency,
+                                customAccountNumber: customAccountNumber
                             )
                             isLoading = false
                             if success {
@@ -197,7 +243,46 @@ struct CreateAccountView: View {
                     .font(.system(size: 16))
                     .foregroundStyle(Color.appleBlue)
                 }
+                
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Listo") {
+                        focusedField = nil
+                    }
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(Color.appleBlue)
+                }
             }
+        }
+    }
+    
+    private var accountNumberLabel: String {
+        switch accountType {
+        case "credit":
+            return "NÚMERO DE TARJETA (OPCIONAL)"
+        case "cash":
+            return "DETALLE / UBICACIÓN (OPCIONAL)"
+        case "crypto":
+            return "DIRECCIÓN / EMAIL (OPCIONAL)"
+        case "wallet":
+            return "DETALLE / NÚMERO (OPCIONAL)"
+        default:
+            return "NÚMERO DE CUENTA (OPCIONAL)"
+        }
+    }
+    
+    private var accountNumberPlaceholder: String {
+        switch accountType {
+        case "credit":
+            return "Ej: **** 1234, o deja en blanco"
+        case "cash":
+            return "Ej: Billetera física, Caja fuerte..."
+        case "crypto":
+            return "Ej: Correo Binance, MetaMask..."
+        case "wallet":
+            return "Ej: Pago Móvil, email de PayPal..."
+        default:
+            return "Ej: 0102..., o deja en blanco"
         }
     }
 }

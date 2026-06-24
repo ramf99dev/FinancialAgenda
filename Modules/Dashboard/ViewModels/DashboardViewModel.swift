@@ -23,32 +23,80 @@ public final class DashboardViewModel: ObservableObject {
     @Published public var showCreateAccountSheet = false
     @Published public var showCalculatorSheet = false
     @Published public var initialTransactionType: TransactionType = .expense
+    @Published public var isLoading = false
 
     /// Moneda principal del usuario, leida de UserDefaults
     @Published public var preferredCurrency: String = UserDefaults.standard.string(forKey: "preferredCurrency") ?? "USD"
 
     /// Indica si la conversion a VES esta habilitada
-    @Published public var showVesConversion: Bool = UserDefaults.standard.bool(forKey: "showVesConversion")
+    @Published public var showVesConversion: Bool = UserDefaults.standard.object(forKey: "showVesConversion") as? Bool ?? true
+
+    private var cancellables = Set<AnyCancellable>()
+
+    public init() {
+        // Propagar actualizaciones de AccountService para redibujar la vista
+        AccountService.shared.$accounts
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        // Propagar actualizaciones de TransactionService
+        TransactionService.shared.$transactions
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        // Propagar actualizaciones de ExchangeRateService
+        ExchangeRateService.shared.$bcvRate
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        // Propagar actualizaciones de BudgetService
+        BudgetService.shared.$budgets
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+    }
 
     // MARK: - Propiedades Computadas de Balance
 
     /// Saldo consolidado de todas las cuentas del usuario
     public var totalBalance: Double {
-        accountService.accounts.reduce(0) { $0 + $1.balance }
+        let rate = rateService.bcvRate
+        return accountService.accounts.reduce(0) { sum, account in
+            sum + account.balance(in: preferredCurrency, rate: rate)
+        }
     }
 
     /// Total de ingresos registrados en todas las transacciones
     public var totalIncomes: Double {
-        txService.transactions
+        let rate = rateService.bcvRate
+        let accounts = accountService.accounts
+        return txService.transactions
             .filter { $0.type == .income }
-            .reduce(0) { $0 + $1.amount }
+            .reduce(0) { sum, tx in
+                sum + tx.amount(in: preferredCurrency, rate: rate, accounts: accounts)
+            }
     }
 
     /// Total de egresos registrados en todas las transacciones
     public var totalExpenses: Double {
-        txService.transactions
+        let rate = rateService.bcvRate
+        let accounts = accountService.accounts
+        return txService.transactions
             .filter { $0.type == .expense }
-            .reduce(0) { $0 + $1.amount }
+            .reduce(0) { sum, tx in
+                sum + tx.amount(in: preferredCurrency, rate: rate, accounts: accounts)
+            }
     }
 
     /// Flujo neto: ingresos menos egresos
@@ -133,13 +181,27 @@ public final class DashboardViewModel: ObservableObject {
 
     /// Carga todos los datos necesarios para el Dashboard de manera concurrente
     public func loadDashboardData() async {
+        // Sincronizar preferencias del usuario desde UserDefaults
+        self.preferredCurrency = UserDefaults.standard.string(forKey: "preferredCurrency") ?? "USD"
+        self.showVesConversion = UserDefaults.standard.object(forKey: "showVesConversion") as? Bool ?? true
+        
+        isLoading = true
+        
         async let accountsFetch: () = accountService.fetchAccounts()
         async let txFetch: () = txService.fetchTransactions()
-        async let ratesFetch: () = rateService.fetchRates()
         async let categoriesFetch: () = categoryService.fetchCategories()
         async let budgetsFetch: () = budgetService.fetchBudgets()
 
-        _ = await (accountsFetch, txFetch, ratesFetch, categoriesFetch, budgetsFetch)
+        // Esperar únicamente por los datos críticos de la estructura
+        _ = await (accountsFetch, txFetch, categoriesFetch, budgetsFetch)
+        
+        // Quitar la pantalla de esqueleto de inmediato para un renderizado ultra veloz
+        isLoading = false
+        
+        // Cargar tasas de cambio en segundo plano sin interrumpir al usuario
+        Task {
+            await rateService.fetchRates()
+        }
     }
 
     // MARK: - Formateo

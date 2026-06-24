@@ -14,6 +14,8 @@ public enum CurrencyFormatter {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = currencyCode
+        formatter.groupingSeparator = "."
+        formatter.decimalSeparator = ","
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
         return formatter.string(from: NSNumber(value: value)) ?? "\(currencyCode) \(value)"
@@ -22,11 +24,15 @@ public enum CurrencyFormatter {
     /// Formatea un valor en Bolivares venezolanos con el prefijo "Bs."
     public static func formatVES(_ value: Double) -> String {
         let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencySymbol = "Bs. "
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = "."
+        formatter.decimalSeparator = ","
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: value)) ?? "Bs. \(value)"
+        if let formatted = formatter.string(from: NSNumber(value: value)) {
+            return "Bs. \(formatted)"
+        }
+        return "Bs. \(value)"
     }
 
     /// Formatea un valor con signo explicito de ingreso (+) o egreso (-)
@@ -34,6 +40,8 @@ public enum CurrencyFormatter {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = currencyCode
+        formatter.groupingSeparator = "."
+        formatter.decimalSeparator = ","
         let prefix = type == .income ? "+" : "-"
         return prefix + (formatter.string(from: NSNumber(value: value)) ?? "\(currencyCode) \(value)")
     }
@@ -45,11 +53,24 @@ public enum CurrencyFormatter {
         let symbol = currencySymbol(for: currencyCode)
 
         if absValue >= 1_000_000 {
-            return "\(sign)\(symbol)\(String(format: "%.1fM", absValue / 1_000_000))"
+            let formatted = formatDecimal(absValue / 1_000_000, minimumFractionDigits: 1, maximumFractionDigits: 1)
+            return "\(sign)\(symbol)\(formatted)M"
         } else if absValue >= 1_000 {
-            return "\(sign)\(symbol)\(String(format: "%.1fK", absValue / 1_000))"
+            let formatted = formatDecimal(absValue / 1_000, minimumFractionDigits: 1, maximumFractionDigits: 1)
+            return "\(sign)\(symbol)\(formatted)K"
         }
         return format(value, currencyCode: currencyCode)
+    }
+
+    /// Formatea un valor decimal genérico con separador de miles '.' y decimal ','
+    public static func formatDecimal(_ value: Double, minimumFractionDigits: Int = 2, maximumFractionDigits: Int = 2) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = "."
+        formatter.decimalSeparator = ","
+        formatter.minimumFractionDigits = minimumFractionDigits
+        formatter.maximumFractionDigits = maximumFractionDigits
+        return formatter.string(from: NSNumber(value: value)) ?? String(format: "%.2f", value)
     }
 
     // MARK: - Auxiliares

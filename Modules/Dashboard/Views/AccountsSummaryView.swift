@@ -12,20 +12,33 @@ struct AccountsSummaryView: View {
 
     /// Saldo consolidado de todas las cuentas
     private var totalBalance: Double {
-        accountService.accounts.reduce(0) { $0 + $1.balance }
+        let preferredCurrency = UserDefaults.standard.string(forKey: "preferredCurrency") ?? "USD"
+        let rate = ExchangeRateService.shared.bcvRate
+        return accountService.accounts.reduce(0) { sum, account in
+            sum + account.balance(in: preferredCurrency, rate: rate)
+        }
     }
 
     var body: some View {
         NavigationStack {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 20) {
-                    // Tarjeta de Balance Consolidado
-                    balanceCard
-
-                    // Lista de Cuentas Activas
-                    accountsList
+            Group {
+                if accountService.isLoading {
+                    ScrollView(.vertical, showsIndicators: false) {
+                        skeletonView
+                            .padding(.bottom, 32)
+                    }
+                } else {
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 20) {
+                            // Tarjeta de Balance Consolidado
+                            balanceCard
+                            
+                            // Lista de Cuentas Activas
+                            accountsList
+                        }
+                        .padding(.bottom, 32)
+                    }
                 }
-                .padding(.bottom, 32)
             }
             .background(Color.appleBackground)
             .navigationTitle("Mis Cuentas")
@@ -76,7 +89,8 @@ struct AccountsSummaryView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Color.appleSecondary)
 
-            Text(CurrencyFormatter.format(totalBalance))
+            let preferredCurrency = UserDefaults.standard.string(forKey: "preferredCurrency") ?? "USD"
+            Text(CurrencyFormatter.format(totalBalance, currencyCode: preferredCurrency))
                 .font(.system(size: 30, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.applePrimary)
 
@@ -129,13 +143,7 @@ struct AccountsSummaryView: View {
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(accountService.accounts.enumerated()), id: \.element.id) { index, account in
-                        AccountDetailRow(
-                            title: account.name,
-                            subtitle: account.accountNumber,
-                            balance: account.balance,
-                            icon: AccountTypeMapper.icon(for: account.type),
-                            iconColor: AccountTypeMapper.color(for: account.type)
-                        )
+                        AccountDetailRow(account: account)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 accountToDelete = account
@@ -155,42 +163,75 @@ struct AccountsSummaryView: View {
             }
         }
     }
+
+    private var balanceCardSkeleton: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SkeletonBlock(width: 140, height: 13, cornerRadius: 4)
+            SkeletonBlock(width: 180, height: 30, cornerRadius: 6)
+            HStack(spacing: 4) {
+                SkeletonBlock(width: 120, height: 11, cornerRadius: 3)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(20)
+        .appleCardStyle()
+        .padding(.horizontal, 20)
+        .padding(.top, 4)
+    }
+
+    private var skeletonView: some View {
+        VStack(spacing: 20) {
+            balanceCardSkeleton
+            
+            VStack(alignment: .leading, spacing: 12) {
+                SkeletonBlock(width: 100, height: 11, cornerRadius: 3)
+                    .padding(.leading, 28)
+                
+                VStack(spacing: 0) {
+                    ListRowSkeleton(hasIconCircle: true)
+                    Divider().padding(.leading, 64)
+                    ListRowSkeleton(hasIconCircle: true)
+                }
+                .appleCardStyle()
+                .padding(.horizontal, 20)
+            }
+        }
+    }
 }
 
 /// Fila individual de detalle de cuenta bancaria
 struct AccountDetailRow: View {
-    let title: String
-    let subtitle: String
-    let balance: Double
-    let icon: String
-    let iconColor: Color
+    let account: Account
 
     var body: some View {
         HStack(spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(iconColor.opacity(0.1))
+                    .fill(AccountTypeMapper.color(for: account.type).opacity(0.1))
                     .frame(width: 42, height: 42)
 
-                Image(systemName: icon)
+                Image(systemName: AccountTypeMapper.icon(for: account.type))
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(iconColor)
+                    .foregroundStyle(AccountTypeMapper.color(for: account.type))
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(title)
+                Text(account.name)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.applePrimary)
-                Text(subtitle)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.appleSecondary)
+                if !account.cleanAccountNumber.isEmpty {
+                    Text(account.cleanAccountNumber)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.appleSecondary)
+                }
             }
 
             Spacer()
 
-            Text(CurrencyFormatter.format(balance))
+            let formattedBalance = account.currency == "VES" ? CurrencyFormatter.formatVES(account.balance) : CurrencyFormatter.format(account.balance)
+            Text(formattedBalance)
                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundStyle(balance >= 0 ? Color.applePrimary : Color.appleRed)
+                .foregroundStyle(account.balance >= 0 ? Color.applePrimary : Color.appleRed)
         }
         .padding(.vertical, 14)
         .padding(.horizontal, 18)

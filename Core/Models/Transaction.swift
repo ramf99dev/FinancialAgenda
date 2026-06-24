@@ -119,6 +119,39 @@ public struct Transaction: Identifiable, Codable {
             ?? Category.other
     }
     
+    /// Devuelve el monto de la transaccion convertido a la moneda destino ("USD" o "VES") segun la cuenta asociada
+    public func amount(in targetCurrency: String, rate: Double, accounts: [Account]) -> Double {
+        guard let accountId = accountId, let account = accounts.first(where: { $0.id == accountId }) else {
+            // Si no tiene cuenta asociada, asumimos que está en USD
+            if targetCurrency == "VES" {
+                return amount * rate
+            }
+            return amount
+        }
+        
+        let txCurrency = account.currency
+        if txCurrency == targetCurrency {
+            return amount
+        }
+        if txCurrency == "VES" && targetCurrency == "USD" {
+            return rate > 0 ? amount / rate : 0
+        }
+        if txCurrency == "USD" && targetCurrency == "VES" {
+            return amount * rate
+        }
+        return amount
+    }
+
+    /// Formatea el monto en la moneda nativa de la cuenta asociada
+    public func formattedAmount(accounts: [Account]) -> String {
+        guard let accountId = accountId, let account = accounts.first(where: { $0.id == accountId }) else {
+            return (type == .income ? "+" : "-") + CurrencyFormatter.format(amount)
+        }
+        let prefix = type == .income ? "+" : "-"
+        let formatted = account.currency == "VES" ? CurrencyFormatter.formatVES(amount) : CurrencyFormatter.format(amount)
+        return prefix + formatted
+    }
+
     public var formattedAmount: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
